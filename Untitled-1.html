@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O‘quv Qurollari Sayti</title>
+
+<style>
+/* ===== Umumiy style ===== */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f4f6f8;
+    color: #333;
+}
+header {
+    background-color: #007acc;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+nav {
+    background-color: #005f99;
+    padding: 10px;
+    text-align: center;
+}
+nav a {
+    color: white;
+    margin: 0 10px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: 0.3s;
+}
+nav a:hover { color: #ffcc00; }
+main { padding: 20px; }
+section { display: none; }
+section.active { display: block; }
+footer {
+    background-color: #007acc;
+    color: white;
+    text-align: center;
+    padding: 15px;
+    margin-top: 20px;
+}
+
+/* ===== O‘quv qurollari kartochkalari ===== */
+.tools, .items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
+    gap: 15px;
+}
+.tool, .item, .item-card {
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: 0.3s;
+}
+.tool img, .item img { width: 100%; border-radius: 6px; margin-top: 10px; }
+.tool:hover, .item:hover, .item-card:hover { transform: scale(1.05); }
+
+/* ===== Tanlangan o‘quv qurollari ===== */
+#output {
+    display:flex;
+    justify-content:center;
+    gap:15px;
+    flex-wrap:wrap;
+    margin-top:20px;
+    padding:20px;
+}
+#output .selected-tool {
+    width:180px;
+    border:2px solid #1b5e20;
+    border-radius:10px;
+    background:white;
+    padding:10px;
+    text-align:center;
+    box-shadow:0 4px 10px rgba(0,0,0,.2);
+}
+#output .selected-tool img {
+    width:100%;
+    height:100px;
+    object-fit:cover;
+    margin-bottom:5px;
+}
+
+/* ===== Jadval ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+th, td {
+    border: 1px solid #ccc;
+    padding: 12px;
+    text-align: center;
+}
+thead { background-color: #007acc; color: white; }
+tbody tr:nth-child(even) { background-color: #f2f7ff; }
+tbody tr:hover { background-color: #d0e4ff; }
+input[type="text"] {
+    width: 300px;
+    padding: 8px;
+    margin-bottom: 10px;
+}
+
+/* ===== Form ===== */
+form {
+    background-color: #4fb8d4;
+    width: 350px;
+    margin: 20px auto;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    color: #000;
+}
+fieldset {
+    border: 2px solid #1787a5;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    padding: 10px;
+}
+legend { font-weight: bold; color: #033e4d; }
+label { display: block; margin-top: 10px; font-weight: bold; }
+input[type="text"], input[type="email"], input[type="tel"], input[type="number"], textarea, select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #0d5b6c;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+textarea { resize: none; height: 80px; }
+.checkbox { margin-top: 10px; }
+.buttons { text-align: center; margin-top: 15px; }
+input[type="submit"], input[type="reset"] {
+    background-color: #1787a5;
+    color: white;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 5px;
+    transition: 0.3s;
+}
+input[type="submit"]:hover, input[type="reset"]:hover { background-color: #0c5f70; }
+
+/* ===== Animatsiyalar ===== */
+.anim-area {
+    display: flex;
+    justify-content: space-around;
+    padding: 30px 0;
+    flex-wrap: wrap;
+}
+@keyframes movePen { 0%{transform:translateX(0);}50%{transform:translateX(80px);}100%{transform:translateX(0);} }
+@keyframes bounce { 0%{transform:translateY(0);}50%{transform:translateY(-25px);}100%{transform:translateY(0);} }
+@keyframes rotateItem { 0%{transform:rotate(0);}100%{transform:rotate(360deg);} }
+.pen { width: 150px; animation: movePen 2s infinite ease-in-out; }
+.notebook { width: 180px; animation: bounce 1.5s infinite; }
+.rotate { width: 150px; animation: rotateItem 3s infinite linear; }
+
+@media(max-width:700px){.items,.tools{grid-template-columns:1fr;}.anim-area{flex-direction:column;align-items:center;gap:20px;}}
+@media(max-width:1000px){.items,.tools{grid-template-columns:repeat(2,1fr);}}
+</style>
+
+<!-- jQuery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+<script>
+// ===== Bo‘limlarni ko‘rsatish =====
+function showSection(id){
+    $('section').removeClass('active');
+    $('#'+id).addClass('active');
+    window.scrollTo(0,0);
+}
+
+// ===== jQuery interaktiv + DOUBLE CLICK =====
+$(document).ready(function(){
+
+    // Hide/Show
+    $("#hide").click(()=> $("p.text").hide());
+    $("#show").click(()=> $("p.text").show());
+
+    // Rang o‘zgartirish
+    $("#colorBtn").click(()=> {
+        let c=$("#chooseColor").val();
+        $("p.text").css("color",c);
+    });
+
+    // FadeIn/FadeOut/Toggle
+    $("#fadeBtn").click(()=> $("#div1,#div2,#div3").fadeIn());
+    $("#hideBoxes").click(()=> $("#div1,#div2,#div3").fadeOut());
+    $("#toggleBoxes").click(()=> $("#div1,#div2,#div3").fadeToggle());
+
+    // DOUBLE CLICK QO‘SHILDI
+    $(".tool:eq(0)").dblclick(function(){
+        alert(
+             "📘 Fan kitoblari:\n\n" +
+            "• Matematika kitobi — o‘quvchilar uchun algebra, geometriya va umumiy matematik bilimlarni o‘rgatuvchi asosiy darslikdir. U odatda quyidagi bo‘limlardan iborat bo‘ladi:\n" +
+            "• Adabiyot kitobi — o‘quvchilarni badiiy asarlar, she’riyat, nasr va dramaturgiya bilan tanishtiradigan muhim darslikdir. U nafaqat o‘qitadi, balki o‘quvchining nutqi, tafakkuri va dunyoqarashini rivojlantiradi.\n" +
+            "• Biologiya kitobi — tirik organizmlar, ularning tuzilishi, rivojlanishi, yashash jarayonlari va tabiatdagi o‘rnini o‘rgatadigan asosiy darslikdir. U o‘quvchilarni tabiatni tushunish, kuzatish va tahlil qilishga o‘rgatadi."
+        );
+    });
+
+    $(".tool:eq(1)").dblclick(function(){
+        alert(
+           "✏️ O‘quv qurollari:\n\n" +
+            "• Daftar — yozish, chizish, hisob-kitob qilish, dars mashg‘ulotlarini qayd etish uchun ishlatiladigan eng asosiy o‘quv qurolidir. Ko‘pincha maktab o‘quvchilari, talabalar, o‘qituvchilar va ofis xodimlari tomonidan qo‘llaniladi.\n" +
+            "• Ruchka — yozish, chizish va hujjatlarni rasmiylashtirish uchun ishlatiladigan eng asosiy yozuv qurolidir. U maktab, universitet, ofis, davlat muassasalari va kundalik hayotda juda keng qo‘llaniladi.\n" +
+            "• Qalam — yozish, chizish va eskizlar yaratish uchun ishlatiladigan eng asosiy o‘quv qurolidir. U maktab, ofis, san’at va dizayn sohalarida keng qo‘llaniladi.\n" +
+            "• Chizg‘ich — to‘g‘ri chiziqlar chizish, o‘lchash va geometriya ishlarida qo‘llaniladigan o‘quv va ofis quroli."
+        );
+    });
+
+    // Qidiruvli jadval
+    $("#myInput").on("keyup", function() {
+        var value = $(this).val().toLowerCase();
+        $("#myTable tr").filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        });
+    });
+});
+</script>
+
+</head>
+<body>
+<header>
+    <h1>📘 O‘quv Qurollari Sayti</h1>
+    <p>Talabalar va o‘qituvchilar uchun foydali materiallar</p>
+</header>
+
+<nav>
+    <a href="#bosh" onclick="showSection('bosh')">Bosh sahifa</a>
+    <a href="#domTools" onclick="showSection('domTools')">DOM O‘quv qurollari</a>
+    <a href="#qurollar" onclick="showSection('qurollar')">O‘quv qurollari</a>
+    <a href="#jadval" onclick="showSection('jadval')">Jadval</a>
+    <a href="#form" onclick="showSection('form')">Buyurtma</a>
+    <a href="#anim" onclick="showSection('anim')">Animatsiya</a>
+    <a href="#jquery" onclick="showSection('jquery')">jQuery Interaktiv</a>
+</nav>
+
+<main>
+    <!-- Bosh sahifa -->
+    <section id="bosh" class="active">
+        <h2>Top O‘quv Qurollari</h2>
+        <div class="tools">
+            <div class="tool">
+                <h3>Fan kitoblari</h3>
+                <p>Matematika, adabiyot, biologiya.</p>
+            </div>
+            <div class="tool">
+                <h3>O‘quv qurollari</h3>
+                <p>Yozish va o‘qish uchun kerakli anjomlar</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- DOM orqali interaktiv o‘quv qurollari -->
+    <section id="domTools">
+        <h2>JavaScript DOM orqali O‘quv Qurollari</h2>
+        <div class="tools" id="tools-section"></div>
+        <div id="output"></div>
+        <script>
+            let tools = [
+                {
+                    title: "Daftar",
+                    desc: "Yozuv va mashqlar uchun",
+                    img: "https://assets.asaxiy.uz/product/items/desktop/e53a0a2978c28872a4505bdb51db06dc2021082416302685754ySuSVVMjbJ.jpg.webp"
+                },
+                {
+                    title: "Ruchka",
+                    desc: "Ko‘k rangli siyoh",
+                    img: "https://media.istockphoto.com/id/1059543698/ru/%D1%84%D0%BE%D1%82%D0%BE/%D1%80%D1%83%D1%87%D0%BA%D0%B0.jpg?b=1&s=612x612&w=0&k=20&c=0i-kfyh-TWZVH1pdOfzqoKrShJ2GP11UZTtPN3b28h0="
+                },
+                {
+                    title: "Qalam",
+                    desc: "Chizma va rasm chizish uchun",
+                    img: "https://yukber.uz/image/cache/catalog/product/YK1212/--700x700.jpg"
+                }
+            ];
+
+            let toolsSection = document.getElementById("tools-section");
+            let outputDiv = document.getElementById("output");
+
+            tools.forEach(function(tool){
+                let toolDiv = document.createElement("div");
+                toolDiv.classList.add("tool");
+
+                let img = document.createElement("img");
+                img.src = tool.img;
+
+                let contentDiv = document.createElement("div");
+                contentDiv.classList.add("content");
+
+                let h3 = document.createElement("h3");
+                h3.textContent = tool.title;
+
+                let p = document.createElement("p");
+                p.textContent = tool.desc;
+
+                contentDiv.appendChild(h3);
+                contentDiv.appendChild(p);
+                toolDiv.appendChild(img);
+                toolDiv.appendChild(contentDiv);
+
+                toolDiv.addEventListener("click", function(){
+                    let selectedTool = document.createElement("div");
+                    selectedTool.classList.add("selected-tool");
+
+                    let selImg = document.createElement("img");
+                    selImg.src = tool.img;
+
+                    let selTitle = document.createElement("h4");
+                    selTitle.textContent = tool.title;
+
+                    let selDesc = document.createElement("p");
+                    selDesc.textContent = tool.desc;
+
+                    selectedTool.appendChild(selImg);
+                    selectedTool.appendChild(selTitle);
+                    selectedTool.appendChild(selDesc);
+
+                    outputDiv.appendChild(selectedTool);
+                });
+
+                toolsSection.appendChild(toolDiv);
+            });
+        </script>
+    </section>
+
+    <!-- O‘quv qurollari -->
+    <section id="qurollar">
+        <h2>Kerakli O‘quv Qurollari</h2>
+        <div class="items">
+            <div class="item">
+                <h3>Daftar</h3>
+                <img src="rasm1.webp" alt="Daftar rasmi">
+                <p>Tavsif: Yozuvlar va mashqlar uchun ishlatiladi.</p>
+            </div>
+            <div class="item">
+                <h3>Ruchka</h3>
+                <img src="rasm11.webp" alt="Ruchka rasmi">
+                <p>Tavsif: Yozish uchun eng ko‘p ishlatiladigan qurol.</p>
+            </div>
+            <div class="item">
+                <h3>Qalam</h3>
+                <img src="rasm2.jpg" alt="Qalam rasmi">
+                <p>Tavsif: Chizish va yozuv mashg‘ulotlari uchun ishlatiladi.</p>
+            </div>
+            <div class="item">
+                <h3>Chizg‘ich</h3>
+                <img src="rasm3.jpg" alt="Chizg‘ich rasmi">
+                <p>Tavsif: To‘g‘ri chiziqlar chizish va o‘lchash uchun mo‘ljallangan.</p>
+            </div>
+            <div class="item">
+                <h3>Bo‘yoqlar</h3>
+                <img src="rasm10.png" alt="Bo‘yoq rasmi">
+                <p>Tavsif: Tasviriy san’at darslarida ishlatiladi.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Jadval -->
+    <section id="jadval">
+        <h2>O‘quv Qurollari Jadvali</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Qurol nomi</th>
+                    <th>Narxi (so‘m)</th>
+                    <th>Mavjudligi (dona)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>Daftar</td><td>5000</td><td>120</td></tr>
+                <tr><td>2</td><td>Ruchka</td><td>3000</td><td>200</td></tr>
+                <tr><td>3</td><td>Qalam</td><td>15000</td><td>90</td></tr>
+                <tr><td>4</td><td>Chizg‘ich</td><td>8000</td><td>70</td></tr>
+                <tr><td>5</td><td>Bo‘yoq</td><td>30000</td><td>50</td></tr>
+                <tr><td>6</td><td>Matematika</td><td>45000</td><td>35</td></tr>
+                <tr><td>7</td><td>Adabiyot</td><td>40000</td><td>45</td></tr>
+                <tr><td>8</td><td>Biologiya</td><td>50000</td><td>50</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Form -->
+    <section id="form">
+        <h2>Murojaat / Buyurtma</h2>
+        <form>
+            <fieldset>
+                <legend>Shaxsiy ma'lumotlar</legend>
+                <label>Ism va familiya:</label>
+                <input type="text" name="fio" value="Rohatoy Ro'zmetova">
+                <label>Elektron pochta:</label>
+                <input type="email" name="email" value="ruzmetova@example.com">
+                <label>Telefon:</label>
+                <input type="tel" name="telefon" value="+998999697949">
+            </fieldset>
+            <fieldset>
+                <legend>Murojaat haqida</legend>
+                <label>Mavzu:</label>
+                <select name="mavzu">
+                    <option>— Tanlang —</option>
+                    <option>Taklif</option>
+                    <option>Shikoyat</option>
+                    <option>Savol</option>
+                </select>
+                <label>Xabar:</label>
+                <textarea name="xabar" placeholder="Xabaringizni shu yerga yozing..."></textarea>
+            </fieldset>
+            <div class="checkbox"><input type="checkbox" name="obuna"> Yangiliklarga obuna bo'lish</div>
+            <div class="buttons">
+                <input type="submit" value="Yuborish">
+                <input type="reset" value="Tozalash">
+            </div>
+        </form>
+    </section>
+
+    <!-- Animatsiya -->
+    <section id="anim">
+        <h2>CSS Animatsiya</h2>
+        <div class="anim-area">
+            <img class="pen" src="https://cdn-icons-png.flaticon.com/512/2601/2601981.png" alt="Pen">
+            <img class="notebook" src="https://cdn-icons-png.flaticon.com/512/2975/2975175.png" alt="Notebook">
+            <img class="rotate" src="https://cdn-icons-png.flaticon.com/512/2620/2620215.png" alt="Ruler">
+        </div>
+    </section>
+
+    <!-- jQuery interaktiv -->
+    <section id="jquery">
+        <h2>jQuery Misollari</h2>
+        <p class="text">Agar "Hide" tugmasini bossangiz, men yo‘qolaman.</p>
+        <button id="hide">Hide</button>
+        <button id="show">Show</button>
+        <br><br>
+        <input type="color" id="chooseColor">
+        <button id="colorBtn">Change Color</button>
+        <hr>
+        <p>FadeIn / FadeOut misoli</p>
+        <button id="fadeBtn">Fade In Boxes</button>
+        <button id="hideBoxes">Hide Boxes</button>
+        <button id="toggleBoxes">Toggle Boxes</button>
+        <br><br>
+        <img id="div1" src="rasm1.webp" style="width:150px;display:none;">
+        <img id="div2" src="rasm2.jpg" style="width:150px;display:none;">
+        <img id="div3" src="rasm3.jpg" style="width:150px;display:none;">
+        <img id="div4" src="rasm10.png" style="width:150px;display:none;">
+        <img id="div5" src="rasm11.webp" style="width:150px;display:none;">
+        <img id="div6" src="rasm6.jpg" style="width:150px;display:none;">
+        <img id="div7" src="rasm8.webp" style="width:150px;display:none;">
+        <img id="div8" src="rasm4.jpg" style="width:150px;display:none;">
+    </section>
+</main>
+
+<footer>
+    &copy; 2025 O‘quv Qurollari | Barcha huquqlar himoyalangan.
+</footer>
+
+</body>
+</html>
